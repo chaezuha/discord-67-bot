@@ -2,7 +2,17 @@ const fs = require("node:fs");
 const path = require("node:path");
 const Database = require("better-sqlite3");
 
-const ALL_TRIGGER_TYPES = ["explicit", "sequence", "charcount", "wordcount", "every67th"];
+const ALL_TRIGGER_TYPES = [
+  "explicit",
+  "sequence",
+  "charcount",
+  "wordcount",
+  "every67th",
+  "syllable67",
+  "syllable67pair",
+  "timestamp67",
+  "wordlen67"
+];
 
 function toDayStringUtc(date) {
   return date.toISOString().slice(0, 10);

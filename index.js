@@ -14,6 +14,9 @@ const { hasExplicit67 } = require("./triggers/explicit67");
 const { hasSixThenSevenSequence } = require("./triggers/sequence67");
 const { countTriggers } = require("./triggers/count67");
 const { checkEvery67thCounter } = require("./triggers/every67th");
+const { detectSyllableTriggers } = require("./triggers/syllable67");
+const { isTimestamp67 } = require("./triggers/timestamp67");
+const { hasSixSevenWordPair } = require("./triggers/wordLength67");
 
 const statsCommand = require("./commands/stats");
 const leaderboardCommand = require("./commands/leaderboard");
@@ -152,6 +155,22 @@ async function main() {
     if (countResult.triggerTypes.length > 0) {
       reasons.push(...countResult.reasons);
       triggerTypes.push(...countResult.triggerTypes);
+    }
+
+    const syllableResult = detectSyllableTriggers(content);
+    if (syllableResult.triggerTypes.length > 0) {
+      reasons.push(...syllableResult.reasons);
+      triggerTypes.push(...syllableResult.triggerTypes);
+    }
+
+    if (isTimestamp67(message.createdAt)) {
+      reasons.push("your message timestamp landed at X:06:07");
+      triggerTypes.push("timestamp67");
+    }
+
+    if (hasSixSevenWordPair(content)) {
+      reasons.push("a 6-letter word was immediately followed by a 7-letter word");
+      triggerTypes.push("wordlen67");
     }
 
     const every67thResult = checkEvery67thCounter(store, message.guild.id, message.channel.id);

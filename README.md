@@ -12,6 +12,10 @@ It detects 67 in multiple ways, tracks persistent stats in SQLite, and provides 
   - Explicit 67 forms: `67`, `#67`, `no. 67`, `6-7`, `6 7`, `6, 7`, `six seven`, `six-seven`, `sixseven`
   - Sequence detection: digit `6` followed by digit `7` in the same sentence (up to 10 words between, no other digits in between)
   - Exact count detection: exactly 67 characters or exactly 67 words
+  - Syllable detection: exactly 67 syllables in the full message (heuristic)
+  - Sentence pair syllables: first sentence has 6 syllables and second sentence has 7 syllables
+  - Timestamp detection: message sent at `X:06:07` (UTC minute/second)
+  - Word-length pair: a 6-letter word immediately followed by a 7-letter word
   - Every 67th message per channel (persistent counter, resets after trigger)
 - Combines all reasons from one message into a single reply
 - Persistent SQLite tracking for:
@@ -97,6 +101,7 @@ Optional `.env` settings:
 - During cooldown:
   - Bot reply is skipped
   - Trigger stats are still recorded in SQLite
+- Syllable matching uses an English-friendly heuristic, so edge-case words may be approximate.
 
 ## Database
 
@@ -140,7 +145,10 @@ Indexes:
 │   ├── explicit67.js
 │   ├── sequence67.js
 │   ├── count67.js
-│   └── every67th.js
+│   ├── every67th.js
+│   ├── syllable67.js
+│   ├── timestamp67.js
+│   └── wordLength67.js
 ├── commands/
 │   ├── stats.js
 │   ├── leaderboard.js

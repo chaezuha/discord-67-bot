@@ -6,7 +6,11 @@ function formatBreakdown(breakdown) {
     `6 ... 7 sequence: **${breakdown.sequence}**`,
     `67 characters: **${breakdown.charcount}**`,
     `67 words: **${breakdown.wordcount}**`,
-    `Every 67th message: **${breakdown.every67th}**`
+    `Every 67th message: **${breakdown.every67th}**`,
+    `67 syllables total: **${breakdown.syllable67}**`,
+    `6-syllable sentence then 7: **${breakdown.syllable67pair}**`,
+    `Timestamp X:06:07: **${breakdown.timestamp67}**`,
+    `6-letter then 7-letter word pair: **${breakdown.wordlen67}**`
   ].join("\n");
 }
 
