@@ -170,6 +170,14 @@ Indexes:
 npm run check
 ```
 
+- Run the unit tests (triggers and database logic):
+
+```bash
+npm test
+```
+
+Both also run automatically in GitHub Actions on pushes to `main` and on pull requests.
+
 ## Troubleshooting
 
 - Commands do not appear:
