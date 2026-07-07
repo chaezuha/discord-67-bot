@@ -10,7 +10,7 @@ It detects 67 in multiple ways, tracks persistent stats in SQLite, and provides 
 
 - Trigger detection:
   - Explicit 67 forms: `67`, `#67`, `no. 67`, `6-7`, `6 7`, `6, 7`, `six seven`, `six-seven`, `sixseven`
-  - Sequence detection: digit `6` followed by digit `7` in the same sentence (up to 10 words between, no other digits in between)
+  - Sequence detection: digit `6` followed by digit `7` in the same or adjacent sentence (up to 10 words between, no other digits in between)
   - Exact count detection: exactly 67 characters or exactly 67 words
   - Syllable detection: exactly 67 syllables in the full message (heuristic)
   - Sentence pair syllables: first sentence has 6 syllables and second sentence has 7 syllables
@@ -30,7 +30,7 @@ It detects 67 in multiple ways, tracks persistent stats in SQLite, and provides 
   - `/67 help`
 - Bonus behavior included:
   - Milestone celebration every 67 lifetime triggers
-  - Per-channel cooldown (default 30s) for bot responses
+  - Per-channel cooldown (default 1s) for bot responses
   - 1% rare response variant chance
 
 ## Requirements
@@ -88,7 +88,7 @@ On startup, the bot logs in and registers `/67` guild commands automatically.
 
 Optional `.env` settings:
 
-- `CHANNEL_COOLDOWN_MS` (default `30000`)
+- `CHANNEL_COOLDOWN_MS` (default `1000`)
 - `RARE_VARIANT_CHANCE` (default `0.01`)
 - `DB_PATH` (default `./data/67bot.sqlite`)
 

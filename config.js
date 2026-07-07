@@ -3,7 +3,7 @@ const rareVariantChance = Number.parseFloat(process.env.RARE_VARIANT_CHANCE ?? "
 
 module.exports = {
   dbPath: process.env.DB_PATH || "./data/67bot.sqlite",
-  cooldownMs: Number.isFinite(cooldownMs) && cooldownMs >= 0 ? cooldownMs : 30000,
+  cooldownMs: Number.isFinite(cooldownMs) && cooldownMs >= 0 ? cooldownMs : 1000,
   rareVariantChance:
     Number.isFinite(rareVariantChance) && rareVariantChance >= 0 && rareVariantChance <= 1
       ? rareVariantChance

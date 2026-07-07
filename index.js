@@ -3,6 +3,7 @@ require("dotenv").config();
 const {
   Client,
   GatewayIntentBits,
+  MessageFlags,
   REST,
   Routes,
   SlashCommandBuilder
@@ -90,7 +91,7 @@ async function main() {
     ]
   });
 
-  client.once("ready", async () => {
+  client.once("clientReady", async () => {
     console.log(`Logged in as ${client.user.tag}`);
 
     try {
@@ -109,7 +110,7 @@ async function main() {
     const handler = commandHandlers.get(subcommand);
 
     if (!handler) {
-      await interaction.reply({ content: "Unknown /67 subcommand.", ephemeral: true });
+      await interaction.reply({ content: "Unknown /67 subcommand.", flags: MessageFlags.Ephemeral });
       return;
     }
 
@@ -118,21 +119,32 @@ async function main() {
     } catch (error) {
       console.error(`Error handling /67 ${subcommand}`, error);
 
-      if (interaction.deferred || interaction.replied) {
-        await interaction.followUp({
+      try {
+        const errorReply = {
           content: "Something went wrong while running that command.",
-          ephemeral: true
-        });
-      } else {
-        await interaction.reply({
-          content: "Something went wrong while running that command.",
-          ephemeral: true
-        });
+          flags: MessageFlags.Ephemeral
+        };
+
+        if (interaction.deferred || interaction.replied) {
+          await interaction.followUp(errorReply);
+        } else {
+          await interaction.reply(errorReply);
+        }
+      } catch (replyError) {
+        console.error(`Failed to send error reply for /67 ${subcommand}`, replyError);
       }
     }
   });
 
   client.on("messageCreate", async (message) => {
+    try {
+      await handleMessageTriggers(message);
+    } catch (error) {
+      console.error("Failed to handle message triggers", error);
+    }
+  });
+
+  async function handleMessageTriggers(message) {
     if (!message.guild || message.author.bot) {
       return;
     }
@@ -193,6 +205,14 @@ async function main() {
       milestoneStep: config.milestoneStep
     });
 
+    // Milestones only fire on the message that crosses them, so announce them
+    // even when the channel cooldown suppresses the regular response.
+    for (const milestone of recordResult.milestones) {
+      await message.channel.send(
+        `🎉 <@${message.author.id}> just hit ${milestone} lifetime triggers! They are truly ⁶🤷⁷`
+      );
+    }
+
     const cooldownKey = `${message.guild.id}:${message.channel.id}`;
     const now = Date.now();
     const lastSent = channelCooldowns.get(cooldownKey) ?? 0;
@@ -203,20 +223,10 @@ async function main() {
 
     channelCooldowns.set(cooldownKey, now);
 
-    try {
-      const response = chooseResponseText();
-      const hint = `*${reasons.join("; ")}*`;
-      await message.channel.send(`${response}\n${hint}`);
-
-      for (const milestone of recordResult.milestones) {
-        await message.channel.send(
-          `🎉 <@${message.author.id}> just hit ${milestone} lifetime triggers! They are truly ⁶🤷⁷`
-        );
-      }
-    } catch (error) {
-      console.error("Failed to send trigger response", error);
-    }
-  });
+    const response = chooseResponseText();
+    const hint = `*${reasons.join("; ")}*`;
+    await message.channel.send(`${response}\n${hint}`);
+  }
 
   await client.login(token);
 }

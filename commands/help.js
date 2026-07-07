@@ -13,7 +13,7 @@ module.exports = {
           name: "Triggers",
           value: [
             "1) Explicit 67: `67`, `#67`, `no. 67`, `6-7`, `6 7`, `6, 7`, `six seven`",
-            '2) Sequence: digit `6` followed by digit `7` in the same sentence (up to 10 words apart)',
+            '2) Sequence: digit `6` followed by digit `7` in the same or adjacent sentence (up to 10 words apart)',
             "3) Exact count: message is exactly 67 characters or exactly 67 words",
             "4) Every 67th message in a channel (counter resets after triggering)",
             "5) Syllables: message totals exactly 67 syllables (heuristic count)",
