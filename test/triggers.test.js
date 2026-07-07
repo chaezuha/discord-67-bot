@@ -30,6 +30,36 @@ test("explicit67", async (t) => {
     }
   });
 
+  await t.test("matches sixty, 607, times, decimals, and mixed word/digit forms", () => {
+    const positives = [
+      "it's 6:07",
+      "6:7",
+      "sixty seven",
+      "sixty-seven",
+      "sixtyseven",
+      "607",
+      "6.7",
+      "6.7 magnitude",
+      "six 7",
+      "6 seven",
+      "sixty 7",
+      "60 seven",
+      "Six. Seven."
+    ];
+
+    for (const content of positives) {
+      assert.equal(hasExplicit67(content), true, `expected match: ${content}`);
+    }
+  });
+
+  await t.test("matches CJK and fullwidth forms", () => {
+    const positives = ["六七", "六 七", "六十七", "６７", "6七", "六-7"];
+
+    for (const content of positives) {
+      assert.equal(hasExplicit67(content), true, `expected match: ${content}`);
+    }
+  });
+
   await t.test("matches 67 as a substring of larger numbers", () => {
     // Current behavior: any "67" substring counts, even inside 667 or 1670.
     assert.equal(hasExplicit67("667"), true);
@@ -37,7 +67,7 @@ test("explicit67", async (t) => {
   });
 
   await t.test("rejects non-matching content", () => {
-    const negatives = ["hello world", "76", "6 and then 7", "seven six", "6.7 magnitude"];
+    const negatives = ["hello world", "76", "6 and then 7", "seven six", "seventy six", "six 75"];
 
     for (const content of negatives) {
       assert.equal(hasExplicit67(content), false, `expected no match: ${content}`);
@@ -58,6 +88,12 @@ test("sequence67", async (t) => {
     assert.equal(hasSixThenSevenSequence("6 then 7"), true);
   });
 
+  await t.test("detects word forms of six and seven", () => {
+    assert.equal(hasSixThenSevenSequence("yeah i had six or maybe seven"), true);
+    assert.equal(hasSixThenSevenSequence("six then 7"), true);
+    assert.equal(hasSixThenSevenSequence("6 then seven"), true);
+  });
+
   await t.test("allows up to 10 words between", () => {
     const tenBetween = `6 ${"word ".repeat(10)}7`;
     const elevenBetween = `6 ${"word ".repeat(11)}7`;
@@ -70,8 +106,13 @@ test("sequence67", async (t) => {
     assert.equal(hasSixThenSevenSequence("6 cats 8 dogs 7 birds"), false);
   });
 
-  await t.test("does not match across sentence boundaries", () => {
-    assert.equal(hasSixThenSevenSequence("I have 6 cats. I have 7 dogs."), false);
+  await t.test("matches across adjacent sentences", () => {
+    assert.equal(hasSixThenSevenSequence("It was 6. Then it was 7"), true);
+    assert.equal(hasSixThenSevenSequence("I have 6 cats. I have 7 dogs."), true);
+  });
+
+  await t.test("does not match beyond adjacent sentences", () => {
+    assert.equal(hasSixThenSevenSequence("I have 6 cats. Nothing else here. I have 7 dogs."), false);
   });
 
   await t.test("requires standalone 6 and 7 tokens", () => {

@@ -1,9 +1,17 @@
+const { normalizeContent } = require("./normalize");
+
+// Patterns run against normalized text (lowercased, fullwidth/CJK numerals mapped to ASCII).
 const EXPLICIT_PATTERNS = [
-    /.*67.*/i,
-    /.*6\s*[-]\s*7.*/i,
-    /.*6\s+7.*/i,
-    /.*6\s*,\s*7.*/i,
-    /.*six(?:\s|-)?seven.*/i
+    // digit-digit: 67, 607, 6-7, 6 - 7, 6 7, 6,7, 6.7, 6:07, 6:7
+    /6[\s\-–—_,.:;]*0?7/,
+    // word-word / word-digit: six seven, six-seven, sixseven, Six. Seven., six 7
+    /six[\W_]*(?:seven|7\b)/,
+    // 6 seven
+    /\b6[\W_]*seven/,
+    // sixty seven, sixty-seven, sixty 7
+    /sixty[\W_]*(?:seven|7\b)/,
+    // 60 seven
+    /\b60[\W_]*seven/
 ];
 
 function hasExplicit67(content) {
@@ -11,7 +19,9 @@ function hasExplicit67(content) {
         return false;
     }
 
-    return EXPLICIT_PATTERNS.some((pattern) => pattern.test(content));
+    const normalized = normalizeContent(content);
+
+    return EXPLICIT_PATTERNS.some((pattern) => pattern.test(normalized));
 }
 
 module.exports = {
