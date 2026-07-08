@@ -48,19 +48,11 @@ function chooseResponseText() {
   return config.standardResponse;
 }
 
-async function registerGuildCommands() {
+async function registerGuildCommands(client, guildIds) {
   const token = process.env.DISCORD_TOKEN;
-  const clientId = process.env.CLIENT_ID;
-  const guildIdsRaw = process.env.GUILD_IDS || process.env.GUILD_ID || "";
-  const guildIds = guildIdsRaw
-    .split(",")
-    .map((id) => id.trim())
-    .filter(Boolean);
+  const clientId = process.env.CLIENT_ID || client.application?.id;
 
-  if (!token || !clientId || guildIds.length === 0) {
-    console.warn(
-      "Skipping command registration. Set DISCORD_TOKEN, CLIENT_ID, and GUILD_ID or GUILD_IDS."
-    );
+  if (!clientId || guildIds.length === 0) {
     return;
   }
 
@@ -95,9 +87,17 @@ async function main() {
     console.log(`Logged in as ${client.user.tag}`);
 
     try {
-      await registerGuildCommands();
+      await registerGuildCommands(client, [...client.guilds.cache.keys()]);
     } catch (error) {
       console.error("Failed to register guild commands", error);
+    }
+  });
+
+  client.on("guildCreate", async (guild) => {
+    try {
+      await registerGuildCommands(client, [guild.id]);
+    } catch (error) {
+      console.error(`Failed to register commands for new guild ${guild.id}`, error);
     }
   });
 

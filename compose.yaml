@@ -1,0 +1,11 @@
+services:
+  bot:
+    image: ghcr.io/chaezuha/discord-67-bot:latest
+    pull_policy: always
+    env_file: .env
+    restart: unless-stopped
+    volumes:
+      - bot-data:/app/data
+
+volumes:
+  bot-data:
