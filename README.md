@@ -23,7 +23,7 @@ stats, server leaderboards, and streaks.
 - Persistent SQLite stats: lifetime totals, per-type breakdown, leaderboards, current and longest streaks
 - Milestone celebration every 67 lifetime triggers, plus a 1% chance of a rare response variant
 - Per-channel cooldown (default 1s) so it can't flood a busy channel
-- One bot process serves any number of servers — stats and counters are tracked per server, and commands register automatically wherever it's invited
+- One bot process can serve any number of servers. Stats and counters are tracked per server, and commands register automatically wherever it's invited
 
 ## Commands
 
@@ -40,7 +40,7 @@ stats, server leaderboards, and streaks.
 
 1. Go to the [Discord Developer Portal](https://discord.com/developers/applications) and create a **New Application**.
 2. Under **Bot**, click **Reset Token** and copy the token (you'll need it for `.env`).
-3. Still under **Bot**, enable **Message Content Intent** (Privileged Gateway Intents) — the bot can't see messages without it.
+3. Still under **Bot**, enable **Message Content Intent** (Privileged Gateway Intents). The bot can't read messages without it.
 4. Invite the bot to your server with this URL (replace `YOUR_CLIENT_ID` with the Application ID from **General Information**):
 
    ```text
@@ -51,7 +51,8 @@ stats, server leaderboards, and streaks.
 
 ### 2. Run with Docker Compose (recommended)
 
-No clone, no Node, no build — the prebuilt image is published to GHCR. Put
+The prebuilt image is published to GHCR, so you don't need to clone the repo
+or install Node. Put
 [`compose.yaml`](compose.yaml) and a `.env` (see [`.env.example`](.env.example))
 in a folder, paste your bot token into `.env`, then:
 
@@ -82,10 +83,11 @@ docker compose up -d --pull never   # --pull never keeps your local build
 ```
 
 **Data persistence:** the SQLite database lives in a named Docker volume
-(`bot-data`), so stats survive restarts, rebuilds, and `docker compose down` —
-only `docker compose down -v` deletes it. Prefer the database visible on the
-host? Create a writable directory (`mkdir -p data && sudo chown 1000:1000 data`)
-and swap the volume for a bind mount in `compose.yaml`:
+(`bot-data`), so stats survive restarts, rebuilds, and `docker compose down`.
+Only `docker compose down -v` deletes it. If you'd rather keep the database
+somewhere visible on the host, create a writable directory
+(`mkdir -p data && sudo chown 1000:1000 data`) and swap the volume for a bind
+mount in `compose.yaml`:
 
 ```yaml
     volumes:
@@ -116,7 +118,7 @@ npm start
 
 Whichever way you run it, the bot registers `/67` commands for every server
 it's in on startup, and registers them automatically when invited to a new
-server — no config changes or restarts needed. Guild registration is fast, so
+server, with no config changes or restarts needed. Guild registration is fast, so
 commands appear almost immediately.
 
 ## Configuration (`.env`)
@@ -125,9 +127,9 @@ commands appear almost immediately.
 | --------------------- | -------- | ------------------------------------------------------------------------------------------ |
 | `DISCORD_TOKEN`       | yes      | Bot token from the Developer Portal.                                                       |
 | `CHANNEL_COOLDOWN_MS` | no       | Per-channel reply cooldown in milliseconds (default `1000`).                               |
-| `RARE_VARIANT_CHANCE` | no       | Chance of a rare response variant, 0–1 (default `0.01`).                                   |
+| `RARE_VARIANT_CHANCE` | no       | Chance of a rare response variant, 0 to 1 (default `0.01`).                                |
 | `DB_PATH`             | no       | SQLite file path (default `./data/67bot.sqlite`; Docker presets `/app/data/67bot.sqlite`). |
-| `CLIENT_ID`           | no       | Application client ID — auto-detected after login, set only to override.                   |
+| `CLIENT_ID`           | no       | Application client ID. Auto-detected after login; only set this to override it.            |
 
 ## Development
 
