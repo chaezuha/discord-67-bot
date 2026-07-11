@@ -3,7 +3,6 @@ require("dotenv").config();
 const {
   Client,
   GatewayIntentBits,
-  MessageFlags,
   REST,
   Routes,
   SlashCommandBuilder
@@ -11,6 +10,7 @@ const {
 
 const config = require("./config");
 const { initDb } = require("./db");
+const { commandModules, handleChatInputInteraction } = require("./interactions");
 const { hasExplicit67 } = require("./triggers/explicit67");
 const { hasSixThenSevenSequence } = require("./triggers/sequence67");
 const { countTriggers } = require("./triggers/count67");
@@ -18,14 +18,6 @@ const { checkEvery67thCounter } = require("./triggers/every67th");
 const { detectSyllableTriggers } = require("./triggers/syllable67");
 const { isTimestamp67 } = require("./triggers/timestamp67");
 const { hasSixSevenWordPair } = require("./triggers/wordLength67");
-
-const statsCommand = require("./commands/stats");
-const leaderboardCommand = require("./commands/leaderboard");
-const streakCommand = require("./commands/streak");
-const helpCommand = require("./commands/help");
-
-const commandModules = [statsCommand, leaderboardCommand, streakCommand, helpCommand];
-const commandHandlers = new Map(commandModules.map((cmd) => [cmd.name, cmd]));
 
 function buildCommandDefinition() {
   const root = new SlashCommandBuilder().setName("67").setDescription("67 bot commands");
@@ -75,6 +67,18 @@ async function main() {
   const store = initDb(config.dbPath);
   const channelCooldowns = new Map();
 
+  // Entries only matter within the cooldown window; sweep expired ones so
+  // the map doesn't grow with every channel ever seen.
+  const cooldownSweep = setInterval(() => {
+    const cutoff = Date.now() - config.cooldownMs;
+    for (const [key, lastSent] of channelCooldowns) {
+      if (lastSent <= cutoff) {
+        channelCooldowns.delete(key);
+      }
+    }
+  }, Math.max(config.cooldownMs, 10 * 60 * 1000));
+  cooldownSweep.unref();
+
   const client = new Client({
     intents: [
       GatewayIntentBits.Guilds,
@@ -102,38 +106,7 @@ async function main() {
   });
 
   client.on("interactionCreate", async (interaction) => {
-    if (!interaction.isChatInputCommand() || interaction.commandName !== "67") {
-      return;
-    }
-
-    const subcommand = interaction.options.getSubcommand();
-    const handler = commandHandlers.get(subcommand);
-
-    if (!handler) {
-      await interaction.reply({ content: "Unknown /67 subcommand.", flags: MessageFlags.Ephemeral });
-      return;
-    }
-
-    try {
-      await handler.execute(interaction, { store, config });
-    } catch (error) {
-      console.error(`Error handling /67 ${subcommand}`, error);
-
-      try {
-        const errorReply = {
-          content: "Something went wrong while running that command.",
-          flags: MessageFlags.Ephemeral
-        };
-
-        if (interaction.deferred || interaction.replied) {
-          await interaction.followUp(errorReply);
-        } else {
-          await interaction.reply(errorReply);
-        }
-      } catch (replyError) {
-        console.error(`Failed to send error reply for /67 ${subcommand}`, replyError);
-      }
-    }
+    await handleChatInputInteraction(interaction, { store, config });
   });
 
   client.on("messageCreate", async (message) => {
@@ -201,7 +174,6 @@ async function main() {
       channelId: message.channel.id,
       userId: message.author.id,
       triggerTypes: uniqueTriggerTypes,
-      messageContent: content,
       milestoneStep: config.milestoneStep
     });
 
@@ -227,6 +199,34 @@ async function main() {
     const hint = `*${reasons.join("; ")}*`;
     await message.channel.send(`${response}\n${hint}`);
   }
+
+  let shuttingDown = false;
+  async function shutdown(signal) {
+    if (shuttingDown) {
+      return;
+    }
+    shuttingDown = true;
+
+    console.log(`Received ${signal}, shutting down`);
+    clearInterval(cooldownSweep);
+
+    try {
+      await client.destroy();
+    } catch (error) {
+      console.error("Error while disconnecting from Discord", error);
+    }
+
+    try {
+      store.db.close();
+    } catch (error) {
+      console.error("Error while closing the database", error);
+    }
+
+    process.exit(0);
+  }
+
+  process.on("SIGINT", () => shutdown("SIGINT"));
+  process.on("SIGTERM", () => shutdown("SIGTERM"));
 
   await client.login(token);
 }

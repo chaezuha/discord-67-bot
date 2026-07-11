@@ -110,7 +110,6 @@ test("recordTriggers", async (t) => {
       channelId: "c1",
       userId: "u1",
       triggerTypes: ["explicit", "sequence", "charcount"],
-      messageContent: "67",
       milestoneStep: 2
     });
 
@@ -123,7 +122,6 @@ test("recordTriggers", async (t) => {
       channelId: "c1",
       userId: "u1",
       triggerTypes: ["explicit"],
-      messageContent: "67 again",
       milestoneStep: 2
     });
 
@@ -140,7 +138,6 @@ test("recordTriggers", async (t) => {
       channelId: "c1",
       userId: "u1",
       triggerTypes: ["explicit"],
-      messageContent: "67",
       milestoneStep: -5
     });
 
@@ -155,7 +152,6 @@ test("user stats and leaderboards", async (t) => {
       channelId: "c1",
       userId,
       triggerTypes,
-      messageContent: "67",
       milestoneStep: 67
     });
   }

@@ -97,6 +97,10 @@ function initDb(dbPath) {
     CREATE INDEX IF NOT EXISTS idx_triggers_date ON triggers(guild_id, created_at);
   `);
 
+  // Message contents were once stored but never read; purge anything left
+  // from older versions rather than keep user content around.
+  db.exec("UPDATE triggers SET message_content = NULL WHERE message_content IS NOT NULL");
+
   const statements = {
     upsertChannelCounter: db.prepare(`
       INSERT INTO channel_counters (guild_id, channel_id, message_count)
@@ -119,8 +123,8 @@ function initDb(dbPath) {
       WHERE guild_id = ? AND channel_id = ?
     `),
     insertTrigger: db.prepare(`
-      INSERT INTO triggers (guild_id, channel_id, user_id, trigger_type, message_content)
-      VALUES (?, ?, ?, ?, ?)
+      INSERT INTO triggers (guild_id, channel_id, user_id, trigger_type)
+      VALUES (?, ?, ?, ?)
     `),
     getUserTotal: db.prepare(`
       SELECT COUNT(*) AS total
@@ -179,17 +183,17 @@ function initDb(dbPath) {
     return { triggered: false, count };
   }
 
-  const recordTriggersTx = db.transaction((guildId, channelId, userId, triggerTypes, messageContent) => {
+  const recordTriggersTx = db.transaction((guildId, channelId, userId, triggerTypes) => {
     for (const triggerType of triggerTypes) {
-      statements.insertTrigger.run(guildId, channelId, userId, triggerType, messageContent);
+      statements.insertTrigger.run(guildId, channelId, userId, triggerType);
     }
   });
 
-  function recordTriggers({ guildId, channelId, userId, triggerTypes, messageContent, milestoneStep }) {
+  function recordTriggers({ guildId, channelId, userId, triggerTypes, milestoneStep }) {
     const safeStep = Number.isFinite(milestoneStep) && milestoneStep > 0 ? milestoneStep : 67;
     const previousTotal = statements.getUserTotal.get(guildId, userId)?.total ?? 0;
 
-    recordTriggersTx(guildId, channelId, userId, triggerTypes, messageContent);
+    recordTriggersTx(guildId, channelId, userId, triggerTypes);
 
     const newTotal = statements.getUserTotal.get(guildId, userId)?.total ?? previousTotal;
     const milestones = [];

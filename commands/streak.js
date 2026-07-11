@@ -1,18 +1,13 @@
 const { EmbedBuilder } = require("discord.js");
-
-async function resolveUsername(interaction, userId) {
-  try {
-    const member = await interaction.guild.members.fetch(userId);
-    return member.displayName;
-  } catch {
-    return `<@${userId}>`;
-  }
-}
+const { resolveUsername } = require("./resolveUsername");
 
 module.exports = {
   name: "streak",
   description: "Show top current streaks in this server",
   async execute(interaction, { store }) {
+    // Member fetches below can exceed Discord's 3-second interaction window.
+    await interaction.deferReply();
+
     const topStreaks = store.getGuildCurrentStreaks(interaction.guildId, 10);
     const requesterStats = store.getUserStats(interaction.guildId, interaction.user.id);
 
@@ -24,12 +19,13 @@ module.exports = {
     if (!topStreaks.length) {
       embed.setDescription("No active streaks right now. Start a fresh ⁶🤷⁷ run today.");
     } else {
-      const lines = [];
-      for (let i = 0; i < topStreaks.length; i += 1) {
-        const entry = topStreaks[i];
-        const username = await resolveUsername(interaction, entry.userId);
-        lines.push(`**${i + 1}.** ${username} - **${entry.currentStreak}** day(s)`);
-      }
+      const usernames = await Promise.all(
+        topStreaks.map((entry) => resolveUsername(interaction, entry.userId))
+      );
+
+      const lines = topStreaks.map(
+        (entry, i) => `**${i + 1}.** ${usernames[i]} - **${entry.currentStreak}** day(s)`
+      );
       embed.setDescription(lines.join("\n"));
     }
 
@@ -38,6 +34,6 @@ module.exports = {
       value: `**${requesterStats.currentStreak}** day(s)`
     });
 
-    await interaction.reply({ embeds: [embed] });
+    await interaction.editReply({ embeds: [embed] });
   }
 };

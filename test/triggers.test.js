@@ -145,6 +145,24 @@ test("count67", async (t) => {
     assert.deepEqual(result.triggerTypes, ["charcount"]);
   });
 
+  await t.test("counts emoji as single characters", () => {
+    // 😀 is 2 UTF-16 code units but 1 visible character.
+    const result = countTriggers("😀".repeat(67));
+
+    assert.equal(result.charCount, 67);
+    assert.deepEqual(result.triggerTypes, ["charcount"]);
+  });
+
+  await t.test("does not trigger on 67 code units that are fewer graphemes", () => {
+    // 33 emoji + 1 letter = 67 UTF-16 code units, but only 34 visible characters.
+    const message = `${"😀".repeat(33)}a`;
+    assert.equal(message.length, 67);
+
+    const result = countTriggers(message);
+    assert.equal(result.charCount, 34);
+    assert.deepEqual(result.triggerTypes, []);
+  });
+
   await t.test("triggers on exactly 67 words", () => {
     const message = Array(67).fill("word").join(" ");
     const result = countTriggers(message);

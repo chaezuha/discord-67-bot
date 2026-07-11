@@ -1,18 +1,13 @@
 const { EmbedBuilder } = require("discord.js");
-
-async function resolveUsername(interaction, userId) {
-  try {
-    const member = await interaction.guild.members.fetch(userId);
-    return member.displayName;
-  } catch {
-    return `<@${userId}>`;
-  }
-}
+const { resolveUsername } = require("./resolveUsername");
 
 module.exports = {
   name: "leaderboard",
   description: "Show the server's top 67 trigger users",
   async execute(interaction, { store }) {
+    // Member fetches below can exceed Discord's 3-second interaction window.
+    await interaction.deferReply();
+
     const leaderboard = store.getGuildLeaderboard(interaction.guildId, 10);
 
     if (!leaderboard.length) {
@@ -21,17 +16,18 @@ module.exports = {
         .setTitle("67 Leaderboard")
         .setDescription("No one has triggered ⁶🤷⁷ yet in this server.");
 
-      await interaction.reply({ embeds: [embed] });
+      await interaction.editReply({ embeds: [embed] });
       return;
     }
 
-    const lines = [];
-    for (let i = 0; i < leaderboard.length; i += 1) {
-      const entry = leaderboard[i];
-      const username = await resolveUsername(interaction, entry.userId);
+    const usernames = await Promise.all(
+      leaderboard.map((entry) => resolveUsername(interaction, entry.userId))
+    );
+
+    const lines = leaderboard.map((entry, i) => {
       const crown = i === 0 ? " 👑" : "";
-      lines.push(`**${i + 1}.** ${username}${crown} - **${entry.total}**`);
-    }
+      return `**${i + 1}.** ${usernames[i]}${crown} - **${entry.total}**`;
+    });
 
     const embed = new EmbedBuilder()
       .setColor(0x5865f2)
@@ -50,6 +46,6 @@ module.exports = {
       }
     }
 
-    await interaction.reply({ embeds: [embed] });
+    await interaction.editReply({ embeds: [embed] });
   }
 };

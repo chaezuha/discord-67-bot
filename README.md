@@ -44,10 +44,12 @@ stats, server leaderboards, and streaks.
 4. Invite the bot to your server with this URL (replace `YOUR_CLIENT_ID` with the Application ID from **General Information**):
 
    ```text
-   https://discord.com/oauth2/authorize?client_id=YOUR_CLIENT_ID&scope=bot%20applications.commands&permissions=3072
+   https://discord.com/oauth2/authorize?client_id=YOUR_CLIENT_ID&scope=bot%20applications.commands&permissions=274877926400
    ```
 
-   (That permission set is: View Channels, Send Messages. Slash commands come from the `applications.commands` scope.)
+   (That permission set is: View Channels, Send Messages, Send Messages in
+   Threads, and Embed Links. Slash commands come from the
+   `applications.commands` scope.)
 
 ### 2. Run with Docker Compose (recommended)
 
@@ -104,7 +106,7 @@ docker run --env-file .env -v bot-data:/app/data ghcr.io/chaezuha/discord-67-bot
 
 ### Alternative: run directly with Node
 
-You'll need Node.js 18+. Then install, configure, and run:
+You'll need Node.js 20+. Then install, configure, and run:
 
 ```sh
 git clone <this repo>
