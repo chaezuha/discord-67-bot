@@ -51,9 +51,15 @@ async function registerGuildCommands(client, guildIds) {
   const rest = new REST({ version: "10" }).setToken(token);
   const body = [buildCommandDefinition().toJSON()];
 
+  // One guild failing (e.g. invited without the applications.commands scope)
+  // shouldn't stop the remaining guilds from getting the command.
   for (const guildId of guildIds) {
-    await rest.put(Routes.applicationGuildCommands(clientId, guildId), { body });
-    console.log(`Registered /67 commands for guild ${guildId}`);
+    try {
+      await rest.put(Routes.applicationGuildCommands(clientId, guildId), { body });
+      console.log(`Registered /67 commands for guild ${guildId}`);
+    } catch (error) {
+      console.error(`Failed to register /67 commands for guild ${guildId}`, error);
+    }
   }
 }
 
@@ -106,7 +112,16 @@ async function main() {
   });
 
   client.on("interactionCreate", async (interaction) => {
-    await handleChatInputInteraction(interaction, { store, config });
+    try {
+      await handleChatInputInteraction(interaction, { store, config });
+    } catch (error) {
+      console.error("Failed to handle interaction", error);
+    }
+  });
+
+  // Without a listener, an emitted "error" event would crash the process.
+  client.on("error", (error) => {
+    console.error("Discord client error", error);
   });
 
   client.on("messageCreate", async (message) => {

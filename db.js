@@ -102,25 +102,13 @@ function initDb(dbPath) {
   db.exec("UPDATE triggers SET message_content = NULL WHERE message_content IS NOT NULL");
 
   const statements = {
-    upsertChannelCounter: db.prepare(`
+    // Wraps back to 0 on the 67th message, so 0 means "just triggered".
+    bumpChannelCounter: db.prepare(`
       INSERT INTO channel_counters (guild_id, channel_id, message_count)
-      VALUES (?, ?, 0)
-      ON CONFLICT(guild_id, channel_id) DO NOTHING
-    `),
-    incrementChannelCounter: db.prepare(`
-      UPDATE channel_counters
-      SET message_count = message_count + 1
-      WHERE guild_id = ? AND channel_id = ?
-    `),
-    getChannelCounter: db.prepare(`
-      SELECT message_count
-      FROM channel_counters
-      WHERE guild_id = ? AND channel_id = ?
-    `),
-    resetChannelCounter: db.prepare(`
-      UPDATE channel_counters
-      SET message_count = 0
-      WHERE guild_id = ? AND channel_id = ?
+      VALUES (?, ?, 1)
+      ON CONFLICT(guild_id, channel_id)
+      DO UPDATE SET message_count = (message_count + 1) % 67
+      RETURNING message_count
     `),
     insertTrigger: db.prepare(`
       INSERT INTO triggers (guild_id, channel_id, user_id, trigger_type)
@@ -169,15 +157,10 @@ function initDb(dbPath) {
   };
 
   function incrementChannelCounterAndCheck(guildId, channelId) {
-    statements.upsertChannelCounter.run(guildId, channelId);
-    statements.incrementChannelCounter.run(guildId, channelId);
+    const { message_count: count } = statements.bumpChannelCounter.get(guildId, channelId);
 
-    const row = statements.getChannelCounter.get(guildId, channelId);
-    const count = row?.message_count ?? 0;
-
-    if (count >= 67) {
-      statements.resetChannelCounter.run(guildId, channelId);
-      return { triggered: true, count };
+    if (count === 0) {
+      return { triggered: true, count: 67 };
     }
 
     return { triggered: false, count };
@@ -195,7 +178,7 @@ function initDb(dbPath) {
 
     recordTriggersTx(guildId, channelId, userId, triggerTypes);
 
-    const newTotal = statements.getUserTotal.get(guildId, userId)?.total ?? previousTotal;
+    const newTotal = previousTotal + triggerTypes.length;
     const milestones = [];
 
     for (let value = previousTotal + 1; value <= newTotal; value += 1) {

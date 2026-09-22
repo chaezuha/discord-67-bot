@@ -4,7 +4,7 @@ const assert = require("node:assert/strict");
 const { hasExplicit67 } = require("../triggers/explicit67");
 const { hasSixThenSevenSequence } = require("../triggers/sequence67");
 const { countTriggers } = require("../triggers/count67");
-const { detectSyllableTriggers } = require("../triggers/syllable67");
+const { countSentenceSyllables, detectSyllableTriggers } = require("../triggers/syllable67");
 const { isTimestamp67 } = require("../triggers/timestamp67");
 const { hasSixSevenWordPair } = require("../triggers/wordLength67");
 
@@ -202,6 +202,32 @@ test("syllable67", async (t) => {
 
   await t.test("triggers on a 6-syllable sentence followed by a 7-syllable sentence", () => {
     const message = "The cat sat on the mat. The dog ran up and hit me.";
+    const result = detectSyllableTriggers(message);
+
+    assert.ok(result.triggerTypes.includes("syllable67pair"));
+  });
+
+  await t.test("counts syllables in words the old heuristic got wrong", () => {
+    const expected = {
+      create: 2,
+      loved: 1,
+      quiet: 2,
+      being: 2,
+      smiles: 1,
+      idea: 3,
+      business: 2,
+      table: 2,
+      jumped: 1
+    };
+
+    for (const [word, count] of Object.entries(expected)) {
+      assert.equal(countSentenceSyllables(word), count, word);
+    }
+  });
+
+  await t.test("triggers the pair with multi-syllable words", () => {
+    // 6 (the smiles were be-ing loved) then 7 (we cre-ate a qui-et place).
+    const message = "The smiles were being loved. We create a quiet place.";
     const result = detectSyllableTriggers(message);
 
     assert.ok(result.triggerTypes.includes("syllable67pair"));

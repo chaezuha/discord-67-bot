@@ -17,7 +17,11 @@ async function handleChatInputInteraction(interaction, { store, config }) {
   const handler = commandHandlers.get(subcommand);
 
   if (!handler) {
-    await interaction.reply({ content: "Unknown /67 subcommand.", flags: MessageFlags.Ephemeral });
+    try {
+      await interaction.reply({ content: "Unknown /67 subcommand.", flags: MessageFlags.Ephemeral });
+    } catch (error) {
+      console.error(`Failed to reply to unknown /67 ${subcommand}`, error);
+    }
     return;
   }
 

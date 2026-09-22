@@ -1,3 +1,5 @@
+const { syllable } = require("syllable");
+
 const WORD_PATTERN = /[A-Za-z]+(?:'[A-Za-z]+)*/g;
 
 function splitSentences(text) {
@@ -7,28 +9,9 @@ function splitSentences(text) {
     .filter(Boolean);
 }
 
-function countWordSyllables(word) {
-  const cleaned = (word || "").toLowerCase().replace(/[^a-z]/g, "");
-  if (!cleaned) {
-    return 0;
-  }
-
-  if (cleaned.length <= 3) {
-    return 1;
-  }
-
-  let normalized = cleaned;
-  if (normalized.endsWith("e") && !normalized.endsWith("le") && !normalized.endsWith("ye")) {
-    normalized = normalized.slice(0, -1);
-  }
-
-  const groups = normalized.match(/[aeiouy]+/g);
-  return Math.max(groups ? groups.length : 1, 1);
-}
-
 function countSentenceSyllables(sentence) {
   const words = sentence.match(WORD_PATTERN) ?? [];
-  return words.reduce((total, word) => total + countWordSyllables(word), 0);
+  return words.reduce((total, word) => total + syllable(word), 0);
 }
 
 function detectSyllableTriggers(content) {
@@ -61,5 +44,6 @@ function detectSyllableTriggers(content) {
 }
 
 module.exports = {
+  countSentenceSyllables,
   detectSyllableTriggers
 };

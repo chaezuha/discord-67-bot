@@ -3,7 +3,7 @@ const { resolveUsername } = require("./resolveUsername");
 
 module.exports = {
   name: "leaderboard",
-  description: "Show the server's top 67 trigger users",
+  description: "Show the top 10 users by 67 triggers in this server",
   async execute(interaction, { store }) {
     // Member fetches below can exceed Discord's 3-second interaction window.
     await interaction.deferReply();
